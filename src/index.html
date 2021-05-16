@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+  function Vue(options) {
+    this.$options = options;
+    this.$data = options.data();
+    observe(this.$data);
+  }
+
+  function observe(data) {
+    Object.keys(data).forEach(k => {
+      define2reactive(data, k, data[k]);
+    })
+  }
+
+  function define2reactive(obj, k, v) {
+    Object.defineProperty(obj, k, {
+      get: function () {
+        return v;
+      },
+      set: function (newVal) {
+        v = newVal;
+      }
+    });
+  }
+
+  Vue.prototype.$mount = function (el) {
+    this.update = function () {
+
+      const vnode = this.$options.render.call(this, this.createElement);
+
+      const parent = document.querySelector(el);
+
+      if (!this.isMounted) {
+
+        parent.append(vnode);
+
+        this.patch(parent, vnode);
+        this.isMounted = true;
+
+        if (this.$options.mounted) {
+          this.$options.mounted.call(this);
+        }
+      } else {
+        // diff
+        this.patch(this._vnode, vnode)
+      }
+
+      this._vnode = vnode;
+    }
+
+    this.update();
+  }
+
+  // vnode生成函数
+  Vue.prototype.createElement = function (tag, props, children) {
+    return {tag, props, children}
+  }
+
+  // patch用于初始化或更新时转换vnode为dom
+  Vue.prototype.patch = function (n1, n2) {
+    if (n1.nodeType) {
+      const child = this.createEle(n2);
+      n1.append(child);
+      n2.$ele = child;
+    } else {
+      // update
+    }
+  }
+
+  // 递归创建元素
+  Vue.prototype.createEle = function (vnode) {
+    const {tag, props, children} = vnode;
+
+    const el = document.createElement(tag);
+
+    if (Array.isArray((children))) {
+      children.forEach(i => {
+        el.appendChild(this.createEle(children));
+      })
+    } else {
+      el.textContent = children;
+    }
+
+    vnode.$el = el;
+    return el;
+  }
+</script>
+
+<!--<script>
+  new Vue({
+    data() {
+      return {
+        title: '12345',
+      }
+    },
+
+    mounted() {
+
+    },
+
+    render() {
+      console.log('&#45;&#45;this.title', this.$data)
+      const h3 = document.createElement('h3');
+      h3.textContent = this.$data.title;
+      return h3;
+    }
+  })
+    .$mount('#app');
+</script>-->
+
+<script>
+    const a = new Vue({
+      data: () => ({
+        title: '12345'
+      }),
+
+      render(h) {
+        return h('h3', null, this.$data.title);
+      }
+    }).$mount('#app');
+</script>
+
+</body>
+</html>
